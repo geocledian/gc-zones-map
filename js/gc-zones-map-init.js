@@ -26,7 +26,9 @@ const libs = ['https://unpkg.com/vue@2.6.11/dist/vue.min.js',
                 'css/bulma-ext/bulma-calendar.min.js',
                 'https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js',
                 'https://unpkg.com/vis-timeline@7.1.2/standalone/umd/vis-timeline-graph2d.min.js',
-				        'https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js'
+				        'https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js',
+                // full screen
+                'https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'
             ];
 
 function loadJSscriptDeps(url_list, final_callback) {

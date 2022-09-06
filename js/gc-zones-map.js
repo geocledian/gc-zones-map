@@ -73,6 +73,8 @@ const gcMapLocales = {
             "zoomIn": "Zoom in",
             "zoomOut": "Zoom out",
             "searchLabel": "Search location",
+            "fullScreenLabelInactive": "View Fullscreen",
+            "fullScreenLabelActive": "Exit Fullscreen",
             "buttons": {
                 "createParcel": { "title": "Create new parcel" },
                 "deleteParcel": { "title": "Delete parcel" },
@@ -122,7 +124,6 @@ const gcMapLocales = {
       "name": "Name",
       "seeding": "Seeding",
       "harvest": "Harvest",
-      "userdata": "User data",
       "promotion": "Promotion",
       "register": "Register parcel",
       "date_format_hint": "YYYY-MM-DD"
@@ -183,10 +184,10 @@ const gcMapLocales = {
                   "ndvi": "NDVI",
                   "ndre1": "NDRE1",
                   "ndre2": "NDRE2",
-                  "ndwi": "Wassergehalt",
+                  "ndwi": "NDWI",
                   "savi": "SAVI",
                   "evi2": "EVI2",
-                  "cire": "Blattfläche",
+                  "cire": "CIRE",
                   "npcri": "NPCRI",
                   "zones": "Zonen"
       },
@@ -198,6 +199,8 @@ const gcMapLocales = {
           "zoomIn": "Hineinzoomen",
           "zoomOut": "Herauszoomen",
           "searchLabel": "Suche nach Ort",
+          "fullScreenLabelInactive": "Vollbildschirm",
+          "fullScreenLabelActive": "Vollbildschirm verlassen",
           "buttons": {
               "createParcel": { "title": "Neues Feld erzeugen" },
               "deleteParcel": { "title": "Feld löschen" },
@@ -247,7 +250,6 @@ const gcMapLocales = {
         "name": "Name",
         "seeding": "Pflanzung",
         "harvest": "Ernte",
-        "userdata": "Zusatzdaten",
         "promotion": "Demo",
         "register": "Feld registrieren",
         "date_format_hint": "JJJJ-MM-TT"
@@ -667,7 +669,6 @@ Vue.component('gc-zones-map', {
         harvest: "",
         name: "",
         entity: "",
-        userdata: "",
         id: "",
         status: ""
       },
@@ -694,6 +695,7 @@ Vue.component('gc-zones-map', {
       inpHarvestDatePicker: undefined,
       zoomControl: undefined,
       searchControl: undefined,
+      fullscreenControl: undefined,
       isGoogleValid: true, //will be set automatically to false if Google Maps API fails
       //
       // Make sure you comply with terms of use for ESRI ArcGIS Online Services first: https://www.esri.com/en-us/legal/terms/full-master-agreement
@@ -958,6 +960,7 @@ Vue.component('gc-zones-map', {
       //refresh leaflet map controls
       this.initZoomControl();
       this.initSearchControl();
+      this.initFullScreenControl();
       // only reinit draw control if editing is toggled - otherwise it will show up in any case
       if (this.drawControl)
         this.initDrawControl();
@@ -1163,6 +1166,8 @@ Vue.component('gc-zones-map', {
   
       this.initSearchControl();
 
+      this.initFullScreenControl();
+
       if (this.gcInitialLoading === true) {
         //initial loading data
         console.debug("initial data loading");
@@ -1213,6 +1218,20 @@ Vue.component('gc-zones-map', {
         position: 'bottomright'
       }).addTo(this.mymap);
     },
+    initFullScreenControl() {
+      
+      if (this.fullscreenControl) {
+        this.mymap.removeControl(this.fullscreenControl);
+      }
+
+      this.mymap.addControl(new L.Control.Fullscreen({
+        title: {
+            'false': this.$t("map.fullScreenLabelInactive"), //'View Fullscreen',
+            'true': this.$t("map.fullScreenLabelActive") //'Exit Fullscreen'
+          },
+        position: 'bottomright'
+      }));
+    },
     initDatePickers() {
 
       if (this.inpPlantDatePicker) {
@@ -1226,6 +1245,7 @@ Vue.component('gc-zones-map', {
         overlay: false,
         closeOnOverlayClick: true,
         closeOnSelect: true,
+        align: "right",
         // callback functions
         onSelect: function (e) { 
                     // hack +1 day
@@ -1244,6 +1264,7 @@ Vue.component('gc-zones-map', {
         overlay: false,
         closeOnOverlayClick: true,
         closeOnSelect: true,
+        align: "right",
         // callback functions
         onSelect: function (e) { 
                     // hack +1 day
@@ -1645,7 +1666,6 @@ Vue.component('gc-zones-map', {
         // parcel_id assumed unique, so return only the first
         // compare strings
         var p = this.getCurrentParcel();
-        console.debug(p);
         if (p) {
           if (p.product) {
             return p.product;
@@ -1773,7 +1793,6 @@ Vue.component('gc-zones-map', {
           harvest: "",
           name: "",
           entity: "",
-          userdata: "",
           id: "",
           status: ""
         };
@@ -1897,6 +1916,7 @@ Vue.component('gc-zones-map', {
         },
         data: postData,
       }).then(function (response) {
+
         if(response.status === 200){
           console.debug(response.data);
           var tmp = response.data;
@@ -1925,7 +1945,13 @@ Vue.component('gc-zones-map', {
           document.getElementById("btnRegisterParcel_" + this.gcWidgetId).classList.remove("is-loading");
         }
       }.bind(this)).catch(err => {
-        console.log("err= " + err);
+        // for API v4 also any response >= 400 will be handled here
+        document.getElementById("divNewParcelMsg_" + this.gcWidgetId).classList.remove("is-hidden");
+        console.error(err.response);
+        // TODO: not translated yet
+        document.getElementById("divNewParcelMsg_" + this.gcWidgetId).innerHTML = "Response: " + JSON.stringify(err.response.data.error) + "<br>";
+        document.getElementById("divNewParcelMsg_" + this.gcWidgetId).innerHTML += "Detail: " + JSON.stringify(err.response.data.detail) + "<br>";
+        document.getElementById("btnRegisterParcel_" + this.gcWidgetId).classList.remove("is-loading");
       })
       // Axios implement end
     },
