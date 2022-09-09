@@ -1,7 +1,7 @@
 /*
  Vue.js Geocledian map component
  created:     2019-11-04, jsommer
- last update: 2021-04-14, jsommer
+ last update: 2022-09-09, jsommer
  version: 0.9.5
 */
 "use strict";
@@ -450,12 +450,12 @@ Vue.component('gc-zones-map', {
             </div><!-- map options -->
 
             <!-- attributive css here -->
-            <div gc-zones-map class="notification gc-api-message" v-show="this.api_err_msg.length > 0" v-html="this.api_err_msg"></div>
+            <div gc-zones-map class="notification gc-api-message" v-show="api_err_msg.length > 0" v-html="$t(api_err_msg) +  '<br>' + $t('api_msg.support')"></div>
 
             <!-- container for map and newParcel div -->
             <div :id="'innerContainer_'+ this.gcWidgetId" class="is-inline">
 
-            <div :id="'map_'+ this.gcWidgetId" class="gc-zones-map" v-show="this.api_err_msg.length==0">
+            <div :id="'map_'+ this.gcWidgetId" class="gc-zones-map" v-show="api_err_msg.length==0">
             <!-- mobile: onclick and onblur events instead of onmouseover and onmouseout -->
             <div :id="'layerControl_'+gcWidgetId" class="layerControl" v-on:mouseover="growLayerControl" 
                                     v-on:mouseout="shrinkLayerControl" 
@@ -553,7 +553,7 @@ Vue.component('gc-zones-map', {
 
             <!-- watermark message -->
             <div class="notification gc-api-message" style="position: relative; opacity: 1.0; margin-bottom: 0.5rem; z-index: 1001; font-size: 0.9rem; top: 40%;"
-              v-show="watermark_msg.length>0" v-html="watermark_msg">
+              v-show="watermark_msg.length>0" v-html="$t(watermark_msg)  +  '<br>' + $t('api_msg.support')">
             </div>
 
             <div :id="'mapLegendContent_'+gcWidgetId" 
@@ -1369,13 +1369,13 @@ Vue.component('gc-zones-map', {
           // TODO change for API v4
           if (tmp.content == "key is not authorized") {
             // show message, hide spinner, don't show map
-            this.api_err_msg = this.$t('api_msg.unauthorized_key') + "<br>" + this.$t('api_msg.support');
+            this.api_err_msg = 'api_msg.unauthorized_key';
             this.isloading = false;
             return;
           }
           if (tmp.content == 	"api key validity expired") {
               // show message, hide spinner, don't show map
-              this.api_err_msg = this.$t('api_msg.invalid_key') + "<br>" + this.$t('api_msg.support');
+              this.api_err_msg = 'api_msg.invalid_key';
               this.isloading = false;
               return;
           }
@@ -1445,13 +1445,13 @@ Vue.component('gc-zones-map', {
           // TODO for API v4!
           if (tmp.content == "key is not authorized") {
             // show message, hide spinner, don't show map
-            this.api_err_msg = this.$t('api_msg.unauthorized_key') + "<br>" + this.$t('api_msg.support');
+            this.api_err_msg = 'api_msg.unauthorized_key';
             this.isloading = false;
             return;
           }
           if (tmp.content == 	"api key validity expired") {
               // show message, hide spinner, don't show map
-              this.api_err_msg = this.$t('api_msg.invalid_key') + "<br>" + this.$t('api_msg.support');
+              this.api_err_msg = 'api_msg.invalid_key';
               this.isloading = false;
               return;
           }
@@ -1498,16 +1498,16 @@ Vue.component('gc-zones-map', {
         if (err.response.status == 401) {
           if (err.response.data.detail == "key is not authorized") {
             // show message, hide spinner, don't show map
-            this.api_err_msg = this.$t('api_msg.unauthorized_key') + "<br>" + this.$t('api_msg.support');
+            this.api_err_msg = 'api_msg.unauthorized_key';
           }
           if (err.response.data.detail == "api key validity expired") {
               // show message, hide spinner, don't show map
-              this.api_err_msg = this.$t('api_msg.invalid_key') + "<br>" + this.$t('api_msg.support');
+              this.api_err_msg = 'api_msg.invalid_key';
           }
         }
         if (err.response.status == 403) {
           // show message, hide spinner, don't show map
-          this.api_err_msg = this.$t('api_msg.missing_permissions') + "<br>" + this.$t('api_msg.support');
+          this.api_err_msg = 'api_msg.missing_permissions';
         }
         console.error("An error occured!")
         console.error(err.response.data);
@@ -1683,7 +1683,7 @@ Vue.component('gc-zones-map', {
 
         if (err.response.status == 403) {
           // show watermark on widget
-          this.watermark_msg = this.$t('api_msg.missing_permissions') + "<br>" + this.$t('api_msg.support');
+          this.watermark_msg = 'api_msg.missing_permissions';
         }
 
         this.isloading = false;
