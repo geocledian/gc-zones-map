@@ -129,8 +129,9 @@ const gcMapLocales = {
       "date_format_hint": "YYYY-MM-DD"
     },
     "api_msg": {
-      "unauthorized_key" : "Sorry, the given API key is not authorized!",
-      "invalid_key" : "Sorry, the given API key's validity expired!",
+      "unauthorized_key" : "Sorry, the API key is not authorized.",
+      "invalid_key" : "Sorry, the API key's validity expired.",
+      "missing_permissions": "Sorry, the API key doesn't have the given permissions to access this product or resource.",
       "support": "Please contact <a href='https://www.geocledian.com'>geo|cledian</a> for support.",
       "new_parcel_msg_ok": "",
       "new_parcel_msg_err": ""
@@ -257,6 +258,7 @@ const gcMapLocales = {
       "api_msg": {
         "unauthorized_key" : "Tut uns leid, der angegebene API Schlüssel existiert nicht!",
         "invalid_key" : "Tut uns leid, die Gültigkeit des angegebenen API Schlüssels ist abgelaufen.",
+        "missing_permissions": "Tut uns leid, der angegebene API Schlüssel hat nicht die erforderlichen Berechtigungen für dieses Produkt bzw. diese Ressource!",
         "support": "Bitte kontaktieren Sie <a href='https://www.geocledian.com'>geo|cledian</a> für weitere Unterstützung.",
         "new_parcel_msg_ok": "",
         "new_parcel_msg_err": ""
@@ -549,6 +551,11 @@ Vue.component('gc-zones-map', {
               <div class="rect5"></div>
             </div>
 
+            <!-- watermark message -->
+            <div class="notification gc-api-message" style="position: relative; opacity: 1.0; margin-bottom: 0.5rem; z-index: 1001; font-size: 0.9rem; top: 40%;"
+              v-show="watermark_msg.length>0" v-html="watermark_msg">
+            </div>
+
             <div :id="'mapLegendContent_'+gcWidgetId" 
                   :class="[gcLegendPosition === 'topright' ? 'topright' : 'bottomleft', 'mapLegendContent','has-text-justified','is-hidden']">
             </div>
@@ -703,7 +710,8 @@ Vue.component('gc-zones-map', {
       isArcGISValid: false, //to be set manually from developer!
       isloading: false, // indicates if data is being loaded or not
       api_err_msg: "", // if there is an error from the API, it will stored here; if length > 0 it will be displayed
-      activeMapActions: ["legend"] // may contain "edit", "query", "legend"
+      activeMapActions: ["legend"], // may contain "edit", "query", "legend"
+      watermark_msg: ""
     }
   },
   computed: {
@@ -954,9 +962,9 @@ Vue.component('gc-zones-map', {
       this.changeLanguage();
 
       //refresh legend also if active - because HTML is created dynamically, translation changes will not fire as usual
-      if (this.parcels.length > 0 && this.activeMapActions.includes("legend")) {
-        this.addLegendControl(this.mymap);
-      }
+      // if (this.parcels.length > 0 && this.activeMapActions.includes("legend")) {
+      //   this.addLegendControl(this.mymap);
+      // }
       //refresh leaflet map controls
       this.initZoomControl();
       this.initSearchControl();
@@ -1223,14 +1231,15 @@ Vue.component('gc-zones-map', {
       if (this.fullscreenControl) {
         this.mymap.removeControl(this.fullscreenControl);
       }
-
-      this.mymap.addControl(new L.Control.Fullscreen({
+      this.fullscreenControl = new L.Control.Fullscreen({
         title: {
             'false': this.$t("map.fullScreenLabelInactive"), //'View Fullscreen',
             'true': this.$t("map.fullScreenLabelActive") //'Exit Fullscreen'
           },
         position: 'bottomright'
-      }));
+      });
+
+      this.mymap.addControl(this.fullscreenControl);
     },
     initDatePickers() {
 
@@ -1485,8 +1494,24 @@ Vue.component('gc-zones-map', {
           }
         }
       }.bind(this)).catch(err => {
+        // all HTTP Responses >= 2xx will be handled here for API v4!
+        if (err.response.status == 401) {
+          if (err.response.data.detail == "key is not authorized") {
+            // show message, hide spinner, don't show map
+            this.api_err_msg = this.$t('api_msg.unauthorized_key') + "<br>" + this.$t('api_msg.support');
+          }
+          if (err.response.data.detail == "api key validity expired") {
+              // show message, hide spinner, don't show map
+              this.api_err_msg = this.$t('api_msg.invalid_key') + "<br>" + this.$t('api_msg.support');
+          }
+        }
+        if (err.response.status == 403) {
+          // show message, hide spinner, don't show map
+          this.api_err_msg = this.$t('api_msg.missing_permissions') + "<br>" + this.$t('api_msg.support');
+        }
         console.error("An error occured!")
-        console.error("err= " + err);
+        console.error(err.response.data);
+        this.isloading = false;
       })
       // Axios implement end
     },
@@ -1601,6 +1626,12 @@ Vue.component('gc-zones-map', {
 
       //show spinner
       this.isloading = true;
+      
+      // hide watermark message
+      this.watermark_msg = "";
+
+      // remove previous images!
+      this.map_removeAllRasters();
 
       const endpoint = "/parcels/" + parcel_id + "/" + productName
       let params = "";
@@ -1646,7 +1677,16 @@ Vue.component('gc-zones-map', {
           }
         }
       }.bind(this)).catch(err => {
-        console.log("err= " + err);
+        // all HTTP Responses >= 2xx will be handled here for API v4!
+        console.error("An error occured!")
+        console.error(err.response);
+
+        if (err.response.status == 403) {
+          // show watermark on widget
+          this.watermark_msg = this.$t('api_msg.missing_permissions') + "<br>" + this.$t('api_msg.support');
+        }
+
+        this.isloading = false;
       })
       // Axios implement end
     },
@@ -2265,6 +2305,7 @@ Vue.component('gc-zones-map', {
     },
     changeLanguage() {
       //this.$i18n.i18next.changeLanguage(this.currentLanguage);
+      console.debug(this.currentLanguage);
       this.$i18n.locale = this.currentLanguage;
     },
   }
